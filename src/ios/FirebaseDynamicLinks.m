@@ -6,22 +6,40 @@
 }
 
 - (void)pluginInitialize {
-    if(![FIRApp defaultApp]) {
-        [FIRApp configure];
-    }
+    //[FIROptions defaultOptions].deepLinkURLScheme = @"com.fieatpteltd.fieat";
+
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(finishLaunching:)
+                                                 name:UIApplicationDidFinishLaunchingNotification
+                                                 object:nil];
+
+}
+
+- (void)finishLaunching:(NSNotification *)notification
+{
+    //NSDictionary* data = notification.userInfo;
+    [FIRApp configure];
 
     [GIDSignIn sharedInstance].clientID = [FIRApp defaultApp].options.clientID;
     [GIDSignIn sharedInstance].uiDelegate = self;
     [GIDSignIn sharedInstance].delegate = self;
+    NSLog(@"finish launching");
+    //[self onDynamicLink:command];
+
 }
 
 - (void)onDynamicLink:(CDVInvokedUrlCommand *)command {
     self.dynamicLinkCallbackId = command.callbackId;
+    //NSLog(command.callbackId);
 
-    if (self.cachedInvitation) {
-        [self sendDynamicLinkData:self.cachedInvitation];
-
-        self.cachedInvitation = nil;
+    if(self.cachedInvitation){
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:self.cachedInvitation];
+        [pluginResult setKeepCallback:[NSNumber numberWithBool:YES]];
+        self.cachedInvitation = NULL; //Reset to null here
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    } else {
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_NO_RESULT];
+        [pluginResult setKeepCallback:[NSNumber numberWithBool:YES]];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }
 }
 
@@ -41,6 +59,7 @@
     NSString *androidMinimumVersion = options[@"androidMinimumVersion"];
 
     _sendInvitationCallbackId = command.callbackId;
+    //NSLog(command.callbackId);
 
     _inviteDialog = [FIRInvites inviteDialog];
     [_inviteDialog setInviteDelegate:self];
@@ -75,11 +94,14 @@
     [[GIDSignIn sharedInstance] signIn];
 }
 
+
 - (void)sendDynamicLinkData:(NSDictionary *)data {
+    //NSLog(self.dynamicLinkCallbackId);
     if (self.dynamicLinkCallbackId) {
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:data];
         [pluginResult setKeepCallbackAsBool:YES];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:self.dynamicLinkCallbackId];
+    //NSLog(self.dynamicLinkCallbackId);
     } else {
         self.cachedInvitation = data;
     }

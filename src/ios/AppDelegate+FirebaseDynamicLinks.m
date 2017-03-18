@@ -64,10 +64,12 @@
                                     annotation:annotation];
   } else {
     // call super
-    return [self application:application
-                     openURL:url
-           sourceApplication:sourceApplication
-                  annotation:annotation];
+      if(![[url scheme]containsString:@"fb"]){
+          return [self application:application
+                           openURL:url
+                 sourceApplication:sourceApplication
+                        annotation:annotation];
+      }
   }
 }
 // [END openurl]
@@ -84,7 +86,7 @@
                                            NSError * _Nullable error) {
     // [START_EXCLUDE]
     NSString *matchType = (dynamicLink.matchConfidence == FIRDynamicLinkMatchConfidenceWeak) ? @"Weak" : @"Strong";
-
+                                  NSLog(matchType);
     [dl sendDynamicLinkData:@{
            @"deepLink": dynamicLink.url.absoluteString,
            @"matchType": matchType
